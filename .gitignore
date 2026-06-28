@@ -1,0 +1,29 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+.DS_Store
+*.log
+
+# Environment variables (real secrets) — never commit
+.env
+.env.local
+.env.production
+
+# macOS
+.DS_Store
+
+# Server
+server/node_modules/
+server/.env
+
+# Firebase
+google-services.json
+GoogleService-Info.plist

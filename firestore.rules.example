@@ -1,0 +1,63 @@
+// firestore.rules.example
+//
+// Copy this into Firebase Console > Firestore Database > Rules (or into
+// `firestore.rules` if you deploy via the Firebase CLI), then publish.
+//
+// Model: anyone (incl. unauthenticated, for the global leaderboard read)
+// can READ player documents, but a player can only WRITE their own
+// document — id'd by their Firebase Auth uid — and can't forge another
+// player's stats.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /players/{playerId} {
+      // Leaderboards are public read — anyone can see the rankings.
+      allow read: if true;
+
+      // First-time write (creating your own player doc): just needs to
+      // be the authenticated owner. There's no prior `resource.data` yet
+      // to compare against, so the stat-jump bound below doesn't apply.
+      allow create: if request.auth != null && request.auth.uid == playerId;
+
+      // Subsequent updates: must still be the owner, AND can't rewrite
+      // wins by more than +1 per write (basic sanity bound against a
+      // compromised/modified client forging huge stat jumps — adjust to
+      // taste, this is intentionally generous).
+      //
+      // NOTE on merge semantics: request.resource.data reflects the FULL
+      // document state after the write, not just the fields you passed —
+      // so a partial `setDoc(ref, {...}, {merge:true})` that doesn't
+      // touch `wins` still has `wins` populated from the existing doc
+      // here, and this rule passes trivially (wins >= wins). This is
+      // what the client's addFriendByUid() relies on. If you ever switch
+      // to a non-merge setDoc() that omits `wins` entirely, this rule
+      // will correctly reject it (request.resource.data.wins is int
+      // fails) — that's a feature, not a bug, but worth knowing if a
+      // write starts mysteriously failing after such a change.
+      //
+      // NOTE on rule structure: this deliberately does NOT use a blanket
+      // `allow write`, since `write` = create + update + delete, and a
+      // broad write rule would make this stricter update check
+      // unreachable (the broader rule wins per Firebase's OR semantics
+      // across matching rules). Keep create/update/delete separate if
+      // you tighten this further.
+      allow update: if request.auth != null
+        && request.auth.uid == playerId
+        && request.resource.data.wins is int
+        && request.resource.data.wins >= resource.data.wins
+        && request.resource.data.wins <= resource.data.wins + 1;
+
+      allow delete: if false; // no client-side deletes of player docs
+    }
+
+    match /savedGames/{playerId} {
+      // Save/resume state is personal — only the owner can read or write
+      // their own in-progress game. No public read here (unlike players).
+      // `write` is fine here (no stat-jump-style constraint needed).
+      allow read, write: if request.auth != null && request.auth.uid == playerId;
+    }
+  }
+}

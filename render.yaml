@@ -1,0 +1,20 @@
+# render.yaml
+# Render.com "Blueprint" spec — lets you deploy this server with
+# "New + > Blueprint" in the Render dashboard, pointing at your repo.
+# Render auto-detects this file at the repo root and configures the service.
+#
+# If your repo root is the whole ludo-game project (not just /server),
+# Render will use `rootDir: server` below so it only builds that folder.
+
+services:
+  - type: web
+    name: ludo-royale-server
+    runtime: docker
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 3001
+    healthCheckPath: /health

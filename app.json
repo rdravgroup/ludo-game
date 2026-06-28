@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Ludo Royale",
+    "slug": "ludo-royale",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "ludoroyale",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2D1B4E"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.ludoroyale",
+      "usesAppleSignIn": true,
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2D1B4E"
+      },
+      "package": "com.yourcompany.ludoroyale",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-splash-screen",
+      "expo-apple-authentication",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "newArchEnabled": false
+          },
+          "ios": {
+            "newArchEnabled": false
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "58cde4a6-ecc1-403a-80c2-0c4d9f9a4357"
+      }
+    }
+  }
+}
