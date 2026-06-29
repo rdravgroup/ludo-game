@@ -9,32 +9,34 @@ import ProfileScreen from '../screens/ProfileScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import PlayerSetupScreen from '../screens/PlayerSetupScreen';
 import OnlineLobbyScreen from '../screens/OnlineLobbyScreen';
-import { Colors } from '../theme/Theme';
+import { useTheme } from '../theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
-const navTheme = {
-  dark: true,
-  colors: {
-    primary: Colors.primary,
-    background: Colors.background,
-    card: Colors.surface,
-    text: Colors.textPrimary,
-    border: Colors.boardBorder,
-    notification: Colors.accent,
-  },
-};
-
 export default function AppNavigator() {
+  const { theme, mode } = useTheme();
+
+  const navTheme = {
+    dark: mode === 'dark',
+    colors: {
+      primary: theme.Colors.primary,
+      background: theme.Colors.background,
+      card: theme.Colors.surface,
+      text: theme.Colors.textPrimary,
+      border: theme.Colors.border,
+      notification: theme.Colors.accent,
+    },
+  };
+
   return (
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator
         initialRouteName="Home"
         screenOptions={{
-          headerStyle: { backgroundColor: Colors.surface },
-          headerTintColor: Colors.textPrimary,
-          headerTitleStyle: { fontWeight: '700' },
-          contentStyle: { backgroundColor: Colors.background },
+          headerStyle: { backgroundColor: theme.Colors.surface },
+          headerTintColor: theme.Colors.textPrimary,
+          headerTitleStyle: { fontFamily: theme.FontFamily.bodyBold },
+          contentStyle: { backgroundColor: theme.Colors.background },
         }}
       >
         <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />

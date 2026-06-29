@@ -5,11 +5,21 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View } from 'react-native';
+import { useFonts } from 'expo-font';
+import {
+  Baloo2_700Bold,
+  Baloo2_800ExtraBold,
+} from '@expo-google-fonts/baloo-2';
+import {
+  Nunito_400Regular,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+} from '@expo-google-fonts/nunito';
 
 import AppNavigator from './src/navigation/AppNavigator';
-import { Colors } from './src/theme/Theme';
 import { useProfileStore } from './src/store/useProfileStore';
 import { SoundManager } from './src/utils/SoundManager';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -17,14 +27,19 @@ export default function App() {
   const [appReady, setAppReady] = useState(false);
   const loadProfile = useProfileStore((s) => s.loadProfile);
 
+  const [fontsLoaded, fontError] = useFonts({
+    Baloo2_700Bold,
+    Baloo2_800ExtraBold,
+    Nunito_400Regular,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+  });
+
   useEffect(() => {
     async function prepare() {
       try {
         await SoundManager.init();
         await loadProfile();
-        // Place any other startup work here: font loading, asset
-        // pre-caching, etc. Example:
-        // await Font.loadAsync({ 'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf') });
       } catch (e) {
         console.warn(e);
       } finally {
@@ -52,21 +67,41 @@ export default function App() {
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
-    if (appReady) {
+    if (appReady && (fontsLoaded || fontError)) {
       await SplashScreen.hideAsync();
     }
-  }, [appReady]);
+  }, [appReady, fontsLoaded, fontError]);
 
-  if (!appReady) return null;
+  if (fontError) {
+    // Fonts failing to load shouldn't hard-crash the app — fall through
+    // to the system font rather than blocking the splash screen forever.
+    console.warn('Font loading error, falling back to system font:', fontError);
+  }
+
+  if (!appReady || (!fontsLoaded && !fontError)) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.background }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-          <StatusBar style="light" />
-          <AppNavigator />
-        </View>
+        <ThemeProvider>
+          <ThemedRoot onLayoutRootView={onLayoutRootView} />
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+/** Small inner component so it can call useTheme() — the provider has to
+ * be a parent, not a sibling, of anything that consumes the context. */
+function ThemedRoot({ onLayoutRootView }) {
+  const { theme, mode } = useTheme();
+  return (
+    <View
+      style={{ flex: 1, backgroundColor: theme.Colors.background }}
+      onLayout={onLayoutRootView}
+    >
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      <AppNavigator />
+    </View>
   );
 }

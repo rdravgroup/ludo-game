@@ -23,7 +23,3 @@ web-build/
 # Server
 server/node_modules/
 server/.env
-
-# Firebase
-google-services.json
-GoogleService-Info.plist

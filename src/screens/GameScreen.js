@@ -24,6 +24,7 @@ import { useGameStore } from '../store/useGameStore';
 import { useProfileStore } from '../store/useProfileStore';
 import { SoundManager } from '../utils/SoundManager';
 import { aiThinkingDelay } from '../utils/AI';
+import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const BOARD_SIZE = Math.min(SCREEN_W - Spacing.md * 2, SCREEN_H * 0.58);
@@ -77,10 +78,11 @@ export default function GameScreen({ navigation }) {
     }, 650);
   }, [playAITurn]);
 
-  const handleRollPress = () => {
+  const handleRollPress = useCallback(() => {
     if (!state || state.diceRolled || isAITurn || state.status !== 'PLAYING') return;
     setIsRolling(true);
     SoundManager.play('diceRoll');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setTimeout(() => {
       const rollResult = rollCurrentDice();
       setIsRolling(false);
@@ -89,29 +91,34 @@ export default function GameScreen({ navigation }) {
         setTimeout(() => skipTurnNoMoves(), 700);
       }
     }, 650);
-  };
+  }, [state, isAITurn, rollCurrentDice, skipTurnNoMoves]);
 
-  const handleTokenPress = (tokenId) => {
-    if (!state || isAITurn || state.status !== 'PLAYING') return;
-    if (!pendingMoves.find((m) => m.tokenId === tokenId)) return;
+  const handleTokenPress = useCallback(
+    (tokenId) => {
+      if (!state || isAITurn || state.status !== 'PLAYING') return;
+      if (!pendingMoves.find((m) => m.tokenId === tokenId)) return;
 
-    SoundManager.play('tokenMove');
-    setHighlightedTokenId(tokenId);
-    const outcome = selectMove(tokenId);
-    handleOutcomeSideEffects(outcome);
-  };
+      SoundManager.play('tokenMove');
+      setHighlightedTokenId(tokenId);
+      const outcome = selectMove(tokenId);
+      handleOutcomeSideEffects(outcome);
+    },
+    [state, isAITurn, pendingMoves, selectMove]
+  );
 
   const handleOutcomeSideEffects = (outcome) => {
     if (!outcome) return;
     if (outcome.result?.capture) {
       captureCountRef.current += 1;
       SoundManager.play('capture');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     }
     if (outcome.result?.tokenReachedHome) {
       SoundManager.play('tokenHome');
     }
     if (outcome.isOver) {
       SoundManager.play('win');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       const humanWon = outcome.winner && !aiColors.includes(outcome.winner);
       recordGameResult({ won: humanWon, captures: captureCountRef.current });
       clearSavedGame();
@@ -205,7 +212,7 @@ export default function GameScreen({ navigation }) {
                   pendingMoves.some((m) => m.tokenId === token.id)
                 }
                 highlight={highlightedTokenId === token.id}
-                onPress={() => handleTokenPress(token.id)}
+                onPress={handleTokenPress}
               />
             ))}
           </View>

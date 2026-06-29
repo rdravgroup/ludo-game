@@ -54,7 +54,7 @@ export function resolveTokenGridPosition(token) {
   };
 }
 
-export default function Token({ token, cellSizePx, isMovable, onPress, highlight }) {
+function TokenBase({ token, cellSizePx, isMovable, onPress, highlight }) {
   const { x, y } = resolveTokenGridPosition(token);
   const theme = PLAYER_THEME[token.color];
 
@@ -124,7 +124,7 @@ export default function Token({ token, cellSizePx, isMovable, onPress, highlight
         { width: radius * 2, height: radius * 2 },
         animatedStyle,
       ]}
-      onTouchEnd={isMovable ? onPress : undefined}
+      onTouchEnd={isMovable ? () => onPress(token.id) : undefined}
     >
       <Svg width={radius * 2} height={radius * 2} viewBox="0 0 100 100">
         <Defs>
@@ -169,3 +169,26 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
 });
+
+/**
+ * GameLogic.applyMove clones EVERY token into a new object on every move
+ * (see cloneTokens in GameLogic.js), not just the one that actually
+ * changed — so a plain `React.memo(Token)` with default shallow-prop
+ * comparison would see a new `token` object reference each time and
+ * re-render anyway, providing no real benefit. This comparator instead
+ * checks the fields that actually affect what gets rendered, so tokens
+ * that didn't logically change skip re-rendering even though their
+ * object reference did.
+ */
+function areTokenPropsEqual(prevProps, nextProps) {
+  return (
+    prevProps.token.state === nextProps.token.state &&
+    prevProps.token.relativeStep === nextProps.token.relativeStep &&
+    prevProps.cellSizePx === nextProps.cellSizePx &&
+    prevProps.isMovable === nextProps.isMovable &&
+    prevProps.highlight === nextProps.highlight &&
+    prevProps.onPress === nextProps.onPress
+  );
+}
+
+export default React.memo(TokenBase, areTokenPropsEqual);

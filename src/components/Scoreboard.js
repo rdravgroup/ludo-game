@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Spacing, Radius } from '../theme/Theme';
 import { PLAYER_THEME } from '../utils/BoardConfig';
 
-export default function Scoreboard({ activeColors, tokens, currentColor, playerNames = {} }) {
+function ScoreboardBase({ activeColors, tokens, currentColor, playerNames = {} }) {
   return (
     <View style={styles.row}>
       {activeColors.map((color) => {
@@ -70,3 +70,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
+function homeCountsSignature(activeColors, tokens) {
+  return activeColors
+    .map((color) => `${color}:${tokens[color].filter((t) => t.state === 'HOME').length}`)
+    .join(',');
+}
+
+/**
+ * Same issue as Token.js: `tokens` gets a brand-new object reference on
+ * every move (see cloneTokens in GameLogic.js) even when a given color's
+ * home count didn't change, so a default shallow React.memo comparison
+ * would never actually skip a re-render. Comparing a derived "home
+ * counts" signature instead means this only re-renders when a token
+ * actually finishes, not on every single move.
+ */
+function areScoreboardPropsEqual(prevProps, nextProps) {
+  return (
+    prevProps.currentColor === nextProps.currentColor &&
+    prevProps.activeColors === nextProps.activeColors &&
+    homeCountsSignature(prevProps.activeColors, prevProps.tokens) ===
+      homeCountsSignature(nextProps.activeColors, nextProps.tokens)
+  );
+}
+
+export default React.memo(ScoreboardBase, areScoreboardPropsEqual);

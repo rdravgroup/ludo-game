@@ -30,7 +30,7 @@ const GRADIENT_ID = 'diceFaceGrad';
  * overshoot rather than stopping dead — this reads as physical weight
  * rather than a flat UI spin.
  */
-export default function Dice({ value, isRolling, disabled, onPress, color = Colors.accent, size = 72 }) {
+function DiceBase({ value, isRolling, disabled, onPress, color = Colors.accent, size = 72 }) {
   const rotation = useSharedValue(0);
   const scaleY = useSharedValue(1);
   const translateY = useSharedValue(0);
@@ -135,3 +135,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
+// Unlike Token, every prop here is a primitive (number/string/boolean),
+// so default React.memo shallow comparison is sufficient — no custom
+// comparator needed.
+export default React.memo(DiceBase);

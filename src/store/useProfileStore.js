@@ -19,6 +19,7 @@ const defaultProfile = {
   },
   soundEnabled: true,
   musicEnabled: true,
+  themeMode: 'dark', // 'dark' | 'light'
 };
 
 /** Merge two stat sets by taking the higher value per field — used when
@@ -105,5 +106,9 @@ export const useProfileStore = create((set, get) => ({
 
   toggleMusic: async () => {
     await get().saveProfile({ musicEnabled: !get().profile.musicEnabled });
+  },
+
+  setThemeMode: async (mode) => {
+    await get().saveProfile({ themeMode: mode === 'light' ? 'light' : 'dark' });
   },
 }));

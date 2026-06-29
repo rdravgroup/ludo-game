@@ -15,9 +15,20 @@
 // back to a clearly-labeled guest/mock mode instead of crashing.
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAuth, getAuth } from 'firebase/auth';
-// @ts-ignore - getReactNativePersistence exists at runtime but is missing from some TS type defs
-import { getReactNativePersistence } from 'firebase/auth';
+// getReactNativePersistence is the officially documented way to get
+// persisted auth state on React Native (see Firebase's own blog post:
+// "Which Firebase SDK do I pick for my React Native project?"). It is
+// resolved via @firebase/auth's "react-native" package.json export
+// condition, which Metro (unlike plain Node) honors when bundling for a
+// native target. This has been a moving target across Firebase/Expo SDK
+// versions for some users — if it ever resolves to `undefined` in your
+// environment, calling it below throws a TypeError that the inner
+// try/catch already catches, falling back to getAuth(app) (auth still
+// works, it just won't persist across app restarts). If you hit that
+// fallback and want full persistence, pin firebase to a version
+// confirmed working with your exact Expo SDK version, or see
+// https://github.com/firebase/firebase-js-sdk/issues/7615 for alternatives.
+import { initializeAuth, getAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -45,11 +56,20 @@ if (isFirebaseConfigured()) {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
     try {
+      if (typeof getReactNativePersistence !== 'function') {
+        throw new Error('getReactNativePersistence is not available from this firebase version');
+      }
       authInstance = initializeAuth(app, {
         persistence: getReactNativePersistence(AsyncStorage),
       });
     } catch (e) {
-      // initializeAuth throws if already initialized (e.g. fast refresh) — fall back to getAuth.
+      // initializeAuth also throws if already initialized (e.g. fast
+      // refresh) — either way, fall back to getAuth. Auth still works in
+      // this fallback; it just won't persist sign-in across app restarts.
+      console.warn(
+        '[firebaseConfig] Falling back to in-memory auth persistence:',
+        e?.message
+      );
       authInstance = getAuth(app);
     }
 
